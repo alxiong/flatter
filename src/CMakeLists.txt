@@ -1,10 +1,24 @@
 
 #flags
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #files
 
 #includes
+if(APPLE)
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang\$")
+        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp")
+        set(OpenMP_C_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY omp)
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang\$")
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY omp)
+    endif()
+endif()
 find_package(OpenMP REQUIRED)
 find_package(GMP REQUIRED)
 find_package(LAPACK REQUIRED)
@@ -23,6 +37,13 @@ target_include_directories(flatter
     ${CMAKE_SOURCE_DIR}/src
     ${flatter_PUBLIC_HEADER_DIR}
 )
+if(APPLE)
+  target_include_directories(flatter PRIVATE
+    "/opt/homebrew/include"
+    "/opt/homebrew/opt/libomp/include"
+    "/opt/homebrew/opt/mpfr/include"
+  )
+endif()
 
 add_subdirectory(math)
 add_subdirectory(problems)
@@ -37,6 +58,9 @@ target_sources(flatter
 )
 
 target_compile_options(flatter PRIVATE -Wall -Werror)
+# Allow -Woverloaded-virtual as an exception
+# as babai is overloaded in gso_interface.h and gso.h
+target_compile_options(flatter PRIVATE -Wno-error=overloaded-virtual)
 
 #external libraries
 target_link_libraries(flatter
